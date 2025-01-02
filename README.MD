@@ -1,52 +1,52 @@
-# SwiftExplorer
+# 🚀 SwiftExplorer
 
 A professional-grade file management application built with Python, featuring advanced search capabilities, file preview support, and a modern dark/light theme interface.
 
-## Key Features
+## ✨ Key Features
 
-### Search Capabilities
+### 🔍 Search Capabilities
 - **Smart Search**: Find files by name, content, or pattern matching
 - **Advanced Filters**: 
-  - File size constraints
-  - Date range filtering
-  - Extension-specific searching
-  - Case sensitivity options
-- **Search History**: Quick access to previous searches
-- **Real-time Results**: Dynamic updates during search operations
+  - 📏 File size constraints
+  - 📅 Date range filtering
+  - 📁 Extension-specific searching
+  - 🔤 Case sensitivity options
+- **📜 Search History**: Quick access to previous searches
+- **⚡ Real-time Results**: Dynamic updates during search operations
 
-### File Preview
-- **Multi-format Support**:
-  - Text files: `.txt`, `.py`, `.log`, `.md`, `.json`, `.xml`, `.csv`, `.ini`, `.yml`, `.yaml`, `.html`, `.css`, `.js`
-  - Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.tiff`, `.webp`
-  - Documents: `.pdf`
-- **Preview Features**:
-  - Zoom controls for images and PDFs
-  - PDF page navigation
-  - Text file content viewing
-  - Syntax highlighting (for supported formats)
+### 👁️ File Preview
+- **📦 Multi-format Support**:
+  - 📝 Text files: `.txt`, `.py`, `.log`, `.md`, `.json`, `.xml`, `.csv`, `.ini`, `.yml`, `.yaml`, `.html`, `.css`, `.js`
+  - 🖼️ Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.tiff`, `.webp`
+  - 📄 Documents: `.pdf`
+- **🎯 Preview Features**:
+  - 🔍 Zoom controls for images and PDFs
+  - 📑 PDF page navigation
+  - 📖 Text file content viewing
+  - 🎨 Syntax highlighting (for supported formats)
 
-### File Operations
-- **Batch Processing**: Perform operations on multiple files
-- **File Management**:
-  - Copy with conflict resolution
-  - Move with automatic renaming
-  - Secure delete
-- **Progress Tracking**: Real-time operation progress indicators
+### 🛠️ File Operations
+- **⚡ Batch Processing**: Perform operations on multiple files
+- **📂 File Management**:
+  - 📋 Copy with conflict resolution
+  - 🚀 Move with automatic renaming
+  - 🗑️ Secure delete
+- **📊 Progress Tracking**: Real-time operation progress indicators
 
-### User Interface
-- **Theme Support**:
-  - Dark mode (Cyborg theme)
-  - Light mode (Flatly theme)
-  - Persistent theme preferences
-- **Modern UI Elements**:
-  - Responsive layout
-  - Custom styling
-  - Progress indicators
-  - Status updates
+### 💫 User Interface
+- **🎨 Theme Support**:
+  - 🌙 Dark mode (Cyborg theme)
+  - ☀️ Light mode (Flatly theme)
+  - 💾 Persistent theme preferences
+- **✨ Modern UI Elements**:
+  - 📱 Responsive layout
+  - 🎯 Custom styling
+  - 📈 Progress indicators
+  - 📢 Status updates
 
-## Installation
+## ⚙️ Installation
 
-### Prerequisites
+### 📋 Prerequisites
 - Python 3.8 or higher
 - pip package manager
 
@@ -95,22 +95,22 @@ python main.py
    - Sort by name, size, or date
    - Preview selected files
 
-### Keyboard Shortcuts
+### ⌨️ Keyboard Shortcuts
 | Shortcut | Action |
 |----------|---------|
-| Ctrl+F | Focus search input |
-| Ctrl+O | Open directory browser |
-| Ctrl+V | Paste from clipboard |
-| F5 | Start search |
-| Ctrl+A | Select all results |
+| `Ctrl+F` | 🔍 Focus search input |
+| `Ctrl+O` | 📁 Open directory browser |
+| `Ctrl+V` | 📋 Paste from clipboard |
+| `F5` | 🚀 Start search |
+| `Ctrl+A` | ✨ Select all results |
 
-## Configuration
+## ⚙️ Configuration
 
-### Settings
-- Theme selection
-- Default directory
-- Search history size
-- Preview preferences
+### 🔧 Settings
+- 🎨 Theme selection
+- 📁 Default directory
+- 📜 Search history size
+- 👁️ Preview preferences
 
 ### File Associations
 The application supports various file types with custom preview handlers:
@@ -120,27 +120,27 @@ SUPPORTED_IMAGE_FILES = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.web
 SUPPORTED_PDF_FILES = {'.pdf'}
 ```
 
-## Contributing
+## 🤝 Contributing
 
-### Development Setup
+### 🛠️ Development Setup
 1. Fork the repository
 2. Create a feature branch
 3. Set up development environment
 4. Make changes following the code style
 5. Submit pull request
 
-### Code Style
-- Type hints for function parameters
-- Comprehensive error handling
-- Logging for debugging
-- Clear documentation
+### 📝 Code Style
+- ✨ Type hints for function parameters
+- 🛡️ Comprehensive error handling
+- 📝 Logging for debugging
+- 📚 Clear documentation
 
-## Support
+## 💬 Support
 
 For bug reports and feature requests, please use the GitHub issues system. For direct support:
-- Email: [kaanerdem3@gmail.com](mailto:kaanerdem3@gmail.com)
-- GitHub Issues: [Project Issues](https://github.com/yourusername/SwiftExplorer/issues)
+- 📧 Email: [kaanerdem3@gmail.com](mailto:kaanerdem3@gmail.com)
+- 🐛 GitHub Issues: [Project Issues](https://github.com/yourusername/SwiftExplorer/issues)
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
