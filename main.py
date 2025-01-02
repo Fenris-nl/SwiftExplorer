@@ -28,30 +28,55 @@ def save_config(config: Dict[str, Any]) -> None:
         logging.error(f"Error saving config: {e}")
 
 def main() -> None:
-    """Initialize and run the application."""
+    """Initialize and run the application with modern styling"""
     try:
         config = load_config()
-        root = tb.Window(themename=config["theme"])
+        
+        # Create root window with modern styling
+        root = tb.Window(
+            themename=config["theme"],
+            scaling=1.2  # Increase default size of widgets
+        )
+        
+        # Configure window
+        root.title("SwiftExplorer")
+        # Instead of setting a fixed geometry, maximize the window
+        root.state('zoomed')  # For Windows
+        # For Linux/Mac uncomment the following:
+        # root.attributes('-zoomed', True)
+        
+        # Set modern font
+        default_font = ('Segoe UI', 10)
+        root.option_add('*Font', default_font)
+        
+        # Create application
         app = FolderBrowser(root)
         
-        if config["default_directory"]:
-            app.directory_entry.insert(0, config["default_directory"])
-
-        # Add dark mode toggle
-        dark_mode_var = tk.BooleanVar(value=config["theme"] == "cyborg")
-        dark_mode_toggle = tb.Checkbutton(
-            root, 
-            text="Dark Mode", 
-            variable=dark_mode_var, 
-            bootstyle="switch",
-            command=lambda: toggle_dark_mode(root, dark_mode_var, config)
-        )
-        dark_mode_toggle.pack(side=tk.BOTTOM, pady=10)
-
+        # Add theme toggle with modern styling
+        create_theme_toggle(root, config)
+        
         root.mainloop()
+
     except Exception as e:
         logging.exception("Application error")
         messagebox.showerror("Error", f"Application error: {str(e)}")
+
+def create_theme_toggle(root: tb.Window, config: Dict[str, Any]) -> None:
+    """Create modern theme toggle"""
+    toggle_frame = ttk.Frame(root)
+    toggle_frame.pack(side=tk.BOTTOM, pady=10)
+    
+    dark_mode_var = tk.BooleanVar(value=config["theme"] == "cyborg")
+    
+    # Create modern toggle switch
+    dark_mode_toggle = ttk.Checkbutton(
+        toggle_frame,
+        text="Dark Mode",
+        variable=dark_mode_var,
+        style='Switch.TCheckbutton',
+        command=lambda: toggle_dark_mode(root, dark_mode_var, config)
+    )
+    dark_mode_toggle.pack(side=tk.LEFT, padx=5)
 
 def toggle_dark_mode(root: tb.Window, var: tk.BooleanVar, config: Dict[str, Any]) -> None:
     """Toggle dark mode and save preference."""

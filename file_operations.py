@@ -78,17 +78,7 @@ def search_files(app) -> None:
         app.results_tree.delete(*app.results_tree.get_children())  # Clear existing results
         
         if found_files:
-            for index, (target, paths) in enumerate(found_files.items()):
-                for file_path in paths:
-                    if app.stop_event.is_set():
-                        logging.info("Search stopped")
-                        break
-                    app.insert_file_result('', file_path, index)  # Insert directly without parent
-                    logging.info(f"Inserting file: {file_path}")
-        
-            # Update status with total files found
-            total_files = sum(len(paths) for paths in found_files.values())
-            app.update_status(f"Found {total_files} file(s)")
+            display_results(app, found_files, search_type)  # Use display_results to filter & show
         else:
             app.update_status("No files found")
 
@@ -199,38 +189,37 @@ def is_exact_match(file, target, extensions, case_sensitive):
 def display_results(app, file_paths, search_type):
     """
     Display the search results in the application's results tree.
-
-    Parameters:
-    app (object): The application instance containing the results tree.
-    file_paths (defaultdict): A dictionary of filenames and their corresponding file paths.
-    search_type (str): The type of search to perform (e.g., All, Newest, Oldest).
     """
     logging.info(f"Displaying results for search type: {search_type}")
+    app.results_tree.delete(*app.results_tree.get_children())
+
     if search_type == "All":
+        # Show all results grouped by target
         for target, paths in file_paths.items():
             parent = app.results_tree.insert('', 'end', text=target, values=("", "", "", ""))
             for index, file_path in enumerate(paths):
                 logging.info(f"Inserting file: {file_path}")
                 app.insert_file_result(parent, file_path, index)
     else:
+        # Get unique files based on search type
         selected_files = select_files_by_type(file_paths, search_type)
-
-        total_files = len(selected_files)
-        if total_files == 0:
-            app.search_button.config(state="normal")
-            app.spinner.stop()
-            app.spinner.pack_forget()
+        if not selected_files:
+            app.update_status("No matching files found")
             return
 
+        # Sort results if needed
         sort_by = app.sort_by_var.get()
         if sort_by == "Size":
             selected_files.sort(key=lambda x: os.path.getsize(x))
         elif sort_by == "Date":
             selected_files.sort(key=os.path.getmtime)
 
+        # Display unique results
         for index, file_path in enumerate(selected_files):
-            logging.info(f"Inserting file: {file_path}")
             app.insert_file_result('', file_path, index)
+
+        # Update status
+        app.update_status(f"Found {len(selected_files)} file(s)")
 
 def insert_file_result(app, parent, file_path, index):
     """Insert a file result into the results tree."""
@@ -262,6 +251,7 @@ def insert_file_result(app, parent, file_path, index):
 def select_files_by_type(file_paths, search_type):
     """
     Select files based on the specified search type (e.g., Newest, Oldest).
+    Ensures only one version of each file is selected based on the search type.
 
     Parameters:
     file_paths (defaultdict): A dictionary of filenames and their corresponding file paths.
@@ -270,15 +260,34 @@ def select_files_by_type(file_paths, search_type):
     Returns:
     list: A list of selected file paths based on the search type.
     """
-    selected_files = []
-    for target, paths in file_paths.items():
-        if paths:
+    # Create a dictionary to store the best match for each base filename
+    unique_files = {}
+    
+    # Flatten all paths and group by base filename
+    all_files = {}
+    for paths in file_paths.values():
+        for path in paths:
+            base_name = os.path.basename(path).lower()  # Use lowercase for consistency
+            if base_name not in all_files:
+                all_files[base_name] = []
+            all_files[base_name].append(path)
+    
+    # Select the appropriate version for each unique base filename
+    for base_name, versions in all_files.items():
+        if versions:
             if search_type == "Newest":
-                selected_file = max(paths, key=os.path.getmtime)
+                selected = max(versions, key=os.path.getmtime)
             elif search_type == "Oldest":
-                selected_file = min(paths, key=os.path.getmtime)
-            selected_files.append(selected_file)
-    return selected_files
+                selected = min(versions, key=os.path.getmtime)
+            elif search_type == "Largest":
+                selected = max(versions, key=os.path.getsize)
+            elif search_type == "Smallest":
+                selected = min(versions, key=os.path.getsize)
+            else:
+                continue
+            unique_files[base_name] = selected
+
+    return list(unique_files.values())
 
 def search_file_content(file_path, search_text):
     """

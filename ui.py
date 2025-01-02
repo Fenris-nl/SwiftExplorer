@@ -64,6 +64,10 @@ class FolderBrowser:
         self.preview_text = None
         self.preview_frame = None
         
+        # Add style configuration
+        self.style = ttk.Style()
+        self.configure_styles()
+
         # Create UI components
         self.create_main_layout(root)
 
@@ -82,6 +86,49 @@ class FolderBrowser:
         self.create_menu_bar(root)
 
         self.stop_event = threading.Event()  # Event to signal stopping the search
+
+    def configure_styles(self):
+        """Configure custom styles for widgets"""
+        # Frame styles
+        self.style.configure('Modern.TFrame', 
+            background='#2b2b2b',
+            padding=10,
+            relief='flat'
+        )
+
+        # Label styles
+        self.style.configure('Modern.TLabel',
+            font=('Segoe UI', 10),
+            padding=(5, 5),
+            background='#2b2b2b',
+            foreground='white'
+        )
+
+        # Button styles
+        self.style.configure('Modern.TButton',
+            font=('Segoe UI', 10),
+            padding=(15, 8),
+            borderwidth=0,
+            relief='flat',
+            background='#0078d4'
+        )
+
+        # Entry styles
+        self.style.configure('Modern.TEntry',
+            padding=(10, 5),
+            relief='flat',
+            borderwidth=0
+        )
+
+        # Treeview styles
+        self.style.configure('Modern.Treeview',
+            background='#2b2b2b',
+            foreground='white',
+            fieldbackground='#2b2b2b',
+            borderwidth=0,
+            relief='flat',
+            rowheight=30
+        )
 
     def create_menu_bar(self, root):
         """Create the menu bar with settings and help menus."""
@@ -150,27 +197,35 @@ class FolderBrowser:
         messagebox.showinfo("About", "Professional File Browser\nVersion 1.0\nDeveloped by Your Name")
 
     def create_main_layout(self, root):
-        # Main frame
-        main_frame = tb.Frame(root)
-        main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        """
+        Create the main layout by organizing frames in a PanedWindow.
+        """
+        # Clear or hide any existing widgets if needed
+        # ...existing code...
 
-        # Create all frames
-        self.create_top_frame(main_frame)
-        self.create_middle_frame(main_frame)
-        self.create_file_operations_frame(main_frame)
-        self.create_status_bar(main_frame)
+        # Create a vertical paned window to hold top/middle/bottom
+        self.main_paned = ttk.Panedwindow(root, orient="vertical")
+        self.main_paned.pack(fill="both", expand=True, padx=10, pady=10)
 
-    def create_status_bar(self, parent_frame):
-        """Create a status bar for displaying operation feedback."""
-        self.status_bar = tb.Label(parent_frame, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        # Top frame (for directory, filename, and search options)
+        self.top_frame = ttk.Frame(self.main_paned)
+        self.create_top_frame(self.top_frame)
+        self.main_paned.add(self.top_frame, weight=0)
 
-    def update_status(self, message):
-        """Update the status bar message."""
-        self.status_bar.config(text=message)
-        self.root.update_idletasks()
+        # Middle frame (for results and preview)
+        self.middle_frame = ttk.Frame(self.main_paned)
+        self.create_middle_frame(self.middle_frame)
+        self.main_paned.add(self.middle_frame, weight=1)
+
+        # Bottom frame (status bar)
+        self.bottom_frame = ttk.Frame(self.main_paned)
+        self.create_status_bar(self.bottom_frame)
+        self.main_paned.add(self.bottom_frame, weight=0)
 
     def create_top_frame(self, parent_frame):
+        """
+        Create top frame with directory selection, filename input, search options.
+        """
         top_frame = tb.Frame(parent_frame)
         top_frame.pack(fill=tk.X)
 
@@ -186,8 +241,8 @@ class FolderBrowser:
         # Search button
         self.create_search_button(top_frame)
 
-    def create_middle_frame(self, parent):
-        middle_frame = tb.Frame(parent)
+    def create_middle_frame(self, parent_frame):
+        middle_frame = tb.Frame(parent_frame)
         middle_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 5))
 
         # Split frame for results and preview
@@ -195,17 +250,40 @@ class FolderBrowser:
         self.create_preview_frame(middle_frame)
 
     def create_directory_frame(self, parent_frame):
-        dir_frame = tb.Frame(parent_frame)
-        dir_frame.pack(fill=tk.X, pady=(10, 5))
+        """Create modern directory selection frame"""
+        dir_frame = ttk.Frame(parent_frame, style='Modern.TFrame')
+        dir_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.directory_label = tb.Label(dir_frame, text="Select Directory:", font=("Helvetica", 12))
-        self.directory_label.pack(side=tk.LEFT, padx=(0, 10))
+        # Add a title label
+        title_frame = ttk.Frame(dir_frame, style='Modern.TFrame')
+        title_frame.pack(fill=tk.X, pady=(0, 5))
         
-        self.directory_entry = tb.Entry(dir_frame, width=50, font=("Helvetica", 12))
+        title_label = ttk.Label(
+            title_frame, 
+            text="📁 Directory Selection",
+            style='Modern.TLabel',
+            font=('Segoe UI', 12, 'bold')
+        )
+        title_label.pack(side=tk.LEFT)
+
+        # Create search container
+        search_container = ttk.Frame(dir_frame, style='Modern.TFrame')
+        search_container.pack(fill=tk.X)
+
+        self.directory_entry = ttk.Entry(
+            search_container,
+            style='Modern.TEntry',
+            font=('Segoe UI', 10)
+        )
         self.directory_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        
-        self.browse_button = tb.Button(dir_frame, text="Browse", command=self.browse_directory, bootstyle=PRIMARY)
-        self.browse_button.pack(side=tk.LEFT)
+
+        self.browse_button = ttk.Button(
+            search_container,
+            text="Browse",
+            style='Modern.TButton',
+            command=self.browse_directory
+        )
+        self.browse_button.pack(side=tk.RIGHT)
 
     def create_filename_frame(self, parent_frame):
         filename_frame = tb.Frame(parent_frame)
@@ -252,100 +330,95 @@ class FolderBrowser:
         self.file_names_text.bind('<<Modified>>', self.update_line_count)
 
     def create_options_frame(self, parent_frame):
-        options_frame = tb.Frame(parent_frame)
-        options_frame.pack(fill=tk.X, pady=(10, 5))
+        """Create modern options frame with categorized sections"""
+        options_frame = ttk.Frame(parent_frame, style='Modern.TFrame')
+        options_frame.pack(fill=tk.X, pady=10)
 
-        # Create checkboxes frame with scrollbar
-        extensions_frame = tb.LabelFrame(options_frame, text="File Extensions", padding=5)
-        extensions_frame.pack(fill=tk.X, pady=5)
+        # Create sections (removed filter section)
+        self.create_file_types_section(options_frame)
+        self.create_search_options_section(options_frame)
 
-        # Create canvas and scrollbar for extensions
-        canvas = tk.Canvas(extensions_frame, height=100)
-        scrollbar = ttk.Scrollbar(extensions_frame, orient="horizontal", command=canvas.xview)
-        scrollable_frame = ttk.Frame(canvas)
+    def create_file_types_section(self, parent):
+        """Create modern file type selection section with grouped checkboxes."""
+        section = ttk.LabelFrame(
+            parent,
+            text="✨ File Types",
+            style='Modern.TLabelframe',
+            padding=10
+        )
+        section.pack(fill=tk.X, pady=(0, 10))
 
-        canvas.configure(xscrollcommand=scrollbar.set)
-
-        # Group extensions by type
-        extension_groups = {
-            "Images": [('jpg', 'JPG'), ('png', 'PNG'), ('gif', 'GIF'), ('webp', 'WebP'), ('svg', 'SVG')],
-            "Documents": [('pdf', 'PDF'), ('doc', 'DOC'), ('docx', 'DOCX'), ('xls', 'XLS'), ('xlsx', 'XLSX')],
-            "Code": [('py', 'Python'), ('java', 'Java'), ('cpp', 'C++'), ('js', 'JavaScript')],
-            "Other": [('txt', 'TXT'), ('md', 'MD'), ('json', 'JSON'), ('xml', 'XML')]
+        # Create a frame for each category
+        categories = {
+            "🖼️ Images": [
+                ('jpg', 'JPG'), ('png', 'PNG'), ('gif', 'GIF'), 
+                ('webp', 'WebP'), ('svg', 'SVG'), ('ico', 'ICO')
+            ],
+            "📄 Documents": [
+                ('pdf', 'PDF'), ('doc', 'DOC'), ('docx', 'DOCX'),
+                ('xls', 'XLS'), ('xlsx', 'XLSX'), ('txt', 'TXT')
+            ],
+            "👨‍💻 Code": [
+                ('py', 'Python'), ('java', 'Java'), ('cpp', 'C++'),
+                ('js', 'JavaScript'), ('html', 'HTML'), ('css', 'CSS')
+            ],
+            "📦 Other": [
+                ('json', 'JSON'), ('xml', 'XML'), ('md', 'Markdown'),
+                ('csv', 'CSV'), ('sql', 'SQL'), ('log', 'LOG')
+            ]
         }
 
-        # Create extension checkboxes in groups
-        current_x = 0
-        for group_name, extensions in extension_groups.items():
-            group_frame = ttk.LabelFrame(scrollable_frame, text=group_name, padding=5)
-            group_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
-            
+        # Create a frame to hold all category frames
+        types_container = ttk.Frame(section)
+        types_container.pack(fill=tk.X, expand=True)
+
+        # Create a frame for each category
+        for category_name, extensions in categories.items():
+            category_frame = ttk.LabelFrame(
+                types_container,
+                text=category_name,
+                padding=5
+            )
+            category_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5)
+
+            # Add checkboxes for each extension
             for ext, label in extensions:
-                cb = tb.Checkbutton(
-                    group_frame,
-                    text=label,
-                    variable=self.extension_vars[ext],
-                    bootstyle="round-toggle"
-                )
-                cb.pack(anchor=tk.W, padx=5)
-                current_x += cb.winfo_reqwidth()
+                if ext in self.extension_vars:
+                    cb = ttk.Checkbutton(
+                        category_frame,
+                        text=label,
+                        variable=self.extension_vars[ext],
+                        style='Modern.TCheckbutton'
+                    )
+                    cb.pack(anchor=tk.W, padx=5, pady=2)
 
-        # Configure canvas
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        
-        canvas.pack(side=tk.TOP, fill=tk.X, expand=True)
-        scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        # Add "Select All" and "Clear All" buttons
+        button_frame = ttk.Frame(section)
+        button_frame.pack(fill=tk.X, pady=(5, 0))
 
-        # Rest of options
-        options_inner_frame = tb.Frame(options_frame)
-        options_inner_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(
+            button_frame,
+            text="Select All",
+            command=self.select_all_extensions,
+            style='Modern.TButton'
+        ).pack(side=tk.LEFT, padx=5)
 
-        self.exact_match_checkbox = tb.Checkbutton(options_inner_frame, text="Exact Match", 
-                                                 variable=self.exact_match_var, bootstyle="info-round-toggle")
-        self.exact_match_checkbox.pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            button_frame,
+            text="Clear All",
+            command=self.clear_all_extensions,
+            style='Modern.TButton'
+        ).pack(side=tk.LEFT, padx=5)
 
-        self.case_sensitive_checkbox = tb.Checkbutton(options_inner_frame, text="Case Sensitive", 
-                                                    bootstyle="info-round-toggle")
-        self.case_sensitive_checkbox.pack(side=tk.LEFT, padx=5)
+    def select_all_extensions(self):
+        """Select all file type checkboxes."""
+        for var in self.extension_vars.values():
+            var.set(True)
 
-        self.search_content_checkbox = tb.Checkbutton(options_inner_frame, text="Search Content", bootstyle=INFO)
-        self.search_content_checkbox.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.sort_by_label = tb.Label(options_inner_frame, text="Sort By:", font=("Helvetica", 12))
-        self.sort_by_label.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.sort_by_var = tk.StringVar()
-        self.sort_by_var.set("None")
-        self.sort_by_combobox = ttk.Combobox(options_inner_frame, textvariable=self.sort_by_var, values=["None", "Size", "Date"], state="readonly")
-        self.sort_by_combobox.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.search_type_label = tb.Label(options_inner_frame, text="Search Type:", font=("Helvetica", 12))
-        self.search_type_label.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.search_type_var = tk.StringVar()
-        self.search_type_var.set("All")
-        self.search_type_combobox = ttk.Combobox(options_inner_frame, textvariable=self.search_type_var, values=["All", "Newest", "Oldest", "Largest", "Smallest"], state="readonly")
-        self.search_type_combobox.pack(side=tk.LEFT, padx=(0, 10))
-
-        # Add advanced search options
-        self.min_size_label = tb.Label(options_inner_frame, text="Min Size (KB):", font=("Helvetica", 12))
-        self.min_size_label.pack(side=tk.LEFT, padx=(0, 10))
-        self.min_size_var = tk.IntVar()
-        self.min_size_entry = tb.Entry(options_inner_frame, textvariable=self.min_size_var, width=10)
-        self.min_size_entry.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.max_size_label = tb.Label(options_inner_frame, text="Max Size (KB):", font=("Helvetica", 12))
-        self.max_size_label.pack(side=tk.LEFT, padx=(0, 10))
-        self.max_size_var = tk.IntVar()
-        self.max_size_entry = tb.Entry(options_inner_frame, textvariable=self.max_size_var, width=10)
-        self.max_size_entry.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.date_range_label = tb.Label(options_inner_frame, text="Date Range:", font=("Helvetica", 12))
-        self.date_range_label.pack(side=tk.LEFT, padx=(0, 10))
-        self.date_range_var = tk.StringVar()
-        self.date_range_entry = tb.Entry(options_inner_frame, textvariable=self.date_range_var, width=20)
-        self.date_range_entry.pack(side=tk.LEFT, padx=(0, 10))
+    def clear_all_extensions(self):
+        """Clear all file type checkboxes."""
+        for var in self.extension_vars.values():
+            var.set(False)
 
     def create_search_button(self, parent_frame):
         search_frame = tb.Frame(parent_frame)
@@ -366,7 +439,7 @@ class FolderBrowser:
         self.create_results_treeview(results_frame)
 
     def create_results_treeview(self, parent_frame):
-        """Create the results treeview with proper configuration."""
+        """Create modern results treeview"""
         # Configure Treeview style
         style = ttk.Style()
         
@@ -407,7 +480,7 @@ class FolderBrowser:
         # Configure column headings
         self.results_tree.heading("Filename", text="Filename", anchor=tk.W)
         self.results_tree.heading("Filepath", text="Filepath", anchor=tk.W)
-        self.results_tree.heading("Size", text="Size", anchor=tk.W)
+        self.results_tree.heading("Size", text="Size", anchor=tk.E)
         self.results_tree.heading("Date Modified", text="Date Modified", anchor=tk.W)
 
         # Configure column properties
@@ -446,6 +519,39 @@ class FolderBrowser:
         self.spinner = tb.Progressbar(parent_frame, mode='indeterminate')
         self.spinner.pack(side=tk.TOP, pady=10)
         self.spinner.pack_forget()
+
+        # Add modern styling to treeview
+        self.results_tree.configure(style='Modern.Treeview')
+        
+        # Add alternating row colors
+        self.results_tree.tag_configure('oddrow',
+            background='#333333',
+            foreground='white'
+        )
+        self.results_tree.tag_configure('evenrow',
+            background='#2b2b2b',
+            foreground='white'
+        )
+        
+        # Add hover effect
+        self.results_tree.tag_configure('hover',
+            background='#404040'
+        )
+        
+        # Bind hover events
+        self.results_tree.bind('<Enter>', self.on_tree_hover)
+        self.results_tree.bind('<Leave>', self.on_tree_leave)
+
+    def on_tree_hover(self, event):
+        """Handle treeview hover effect"""
+        item = self.results_tree.identify_row(event.y)
+        if item:
+            self.results_tree.tag_add('hover', item)
+
+    def on_tree_leave(self, event):
+        """Handle treeview hover leave"""
+        for item in self.results_tree.tag_has('hover'):
+            self.results_tree.tag_remove('hover', item)
 
     def insert_file_result(self, parent, file_path, index):
         """Insert a file result into the treeview."""
@@ -490,16 +596,6 @@ class FolderBrowser:
             selected_files = select_files_by_type(file_paths, search_type)
 
             total_files = len(selected_files)
-            if (self.min_size_var.get() > 0 or self.max_size_var.get() > 0) and total_files > 0:
-                selected_files = [f for f in selected_files if self.min_size_var.get() <= os.path.getsize(f) / 1024 <= self.max_size_var.get()]
-            if self.date_range_var.get() and total_files > 0:
-                date_range = self.date_range_var.get().split('-')
-                if len(date_range) == 2:
-                    start_date = datetime.strptime(date_range[0].strip(), '%Y-%m-%d')
-                    end_date = datetime.strptime(date_range[1].strip(), '%Y-%m-%d')
-                    selected_files = [f for f in selected_files if start_date <= datetime.fromtimestamp(os.path.getmtime(f)) <= end_date]
-
-            total_files = len(selected_files)
             if total_files == 0:
                 self.search_button.config(state="normal")
                 self.spinner.stop()
@@ -507,9 +603,9 @@ class FolderBrowser:
                 return
 
             sort_by = self.sort_by_var.get()
-            if sort_by == "Size":
+            if (sort_by == "Size"):
                 selected_files.sort(key=lambda x: os.path.getsize(x))
-            elif sort_by == "Date":
+            elif (sort_by == "Date"):
                 selected_files.sort(key=os.path.getmtime)
 
             for index, file_path in enumerate(selected_files):
@@ -533,6 +629,9 @@ class FolderBrowser:
         self.select_all_button.pack(side=tk.LEFT, padx=(0, 10))
 
     def create_preview_frame(self, parent_frame):
+        """
+        Create preview area (canvas or text).
+        """
         # Create preview frame with fixed minimum size
         self.preview_frame = tb.Frame(parent_frame)
         self.preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
@@ -599,6 +698,18 @@ class FolderBrowser:
         self.zoom_in_button = tb.Button(right_controls, text="Zoom In", 
                                       command=self.zoom_in, state=tk.DISABLED)
         self.zoom_in_button.pack(side=tk.LEFT, padx=5)
+
+    def create_status_bar(self, parent_frame):
+        """
+        Create a status bar at the bottom.
+        """
+        self.status_bar = tb.Label(parent_frame, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def update_status(self, message):
+        """Update the status bar message."""
+        self.status_bar.config(text=message)
+        self.root.update_idletasks()
 
     def browse_directory(self):
         directory = filedialog.askdirectory()
@@ -771,7 +882,7 @@ class FolderBrowser:
         """Remove duplicates and empty lines from the text content."""
         try:
             content = self.file_names_text.get("1.0", tk.END).strip()
-            lines = content.split('\n')
+            lines = [line for line in content.split('\n') if line.strip()]
             # Remove empty lines and strip whitespace
             lines = [line.strip() for line in lines if line.strip()]
             # Remove duplicates while preserving order
@@ -834,3 +945,83 @@ class FolderBrowser:
             List[str]: List of selected file extensions with dots (e.g., ['.jpg', '.png'])
         """
         return [f'.{ext}' for ext, var in self.extension_vars.items() if var.get()]
+
+    def create_search_options_section(self, parent):
+        """Create modern search options section"""
+        section = ttk.LabelFrame(
+            parent,
+            text="🔍 Search Options",
+            style='Modern.TLabelframe',
+            padding=10
+        )
+        section.pack(fill=tk.X, pady=(0, 10))
+
+        # Create options container
+        options_container = ttk.Frame(section, style='Modern.TFrame')
+        options_container.pack(fill=tk.X, expand=True)
+
+        # Left side - Search modes
+        search_modes = ttk.Frame(options_container, style='Modern.TFrame')
+        search_modes.pack(side=tk.LEFT, fill=tk.Y, padx=5)
+
+        # Search mode checkboxes
+        self.exact_match_checkbox = ttk.Checkbutton(
+            search_modes,
+            text="Exact Match",
+            variable=self.exact_match_var,
+            style='Modern.TCheckbutton'
+        )
+        self.exact_match_checkbox.pack(anchor=tk.W, pady=2)
+
+        self.case_sensitive_checkbox = ttk.Checkbutton(
+            search_modes,
+            text="Case Sensitive",
+            style='Modern.TCheckbutton'
+        )
+        self.case_sensitive_checkbox.pack(anchor=tk.W, pady=2)
+
+        self.search_content_checkbox = ttk.Checkbutton(
+            search_modes,
+            text="Search Content",
+            style='Modern.TCheckbutton'
+        )
+        self.search_content_checkbox.pack(anchor=tk.W, pady=2)
+
+        # Right side - Sort options
+        sort_options = ttk.Frame(options_container, style='Modern.TFrame')
+        sort_options.pack(side=tk.RIGHT, fill=tk.Y, padx=5)
+
+        # Sort by dropdown
+        ttk.Label(
+            sort_options,
+            text="Sort By:",
+            style='Modern.TLabel'
+        ).pack(side=tk.LEFT, padx=5)
+
+        self.sort_by_var = tk.StringVar(value="None")
+        sort_by = ttk.Combobox(
+            sort_options,
+            textvariable=self.sort_by_var,
+            values=["None", "Size", "Date"],
+            state="readonly",
+            width=15
+        )
+        sort_by.pack(side=tk.LEFT, padx=5)
+
+        # Search type dropdown
+        ttk.Label(
+            sort_options,
+            text="Search Type:",
+            style='Modern.TLabel'
+        ).pack(side=tk.LEFT, padx=5)
+
+        self.search_type_var = tk.StringVar(value="All")
+        search_type = ttk.Combobox(
+            sort_options,
+            textvariable=self.search_type_var,
+            values=["All", "Newest", "Oldest", "Largest", "Smallest"],
+            state="readonly",
+            width=15
+        )
+        search_type.pack(side=tk.LEFT, padx=5)
+
