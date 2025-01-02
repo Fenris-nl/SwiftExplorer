@@ -88,8 +88,8 @@ def search_files(app) -> None:
     finally:
         app.search_button.config(state="normal")
         app.stop_button.config(state=tk.DISABLED)
-        app.spinner.stop()
-        app.spinner.pack_forget()
+        app.loading_indicator.stop()
+        app.loading_indicator.pack_forget()
 
 def get_extensions(app):
     """
@@ -113,8 +113,8 @@ def show_error(app, message):
     """
     messagebox.showerror("Error", message)
     app.search_button.config(state="normal")
-    app.spinner.stop()
-    app.spinner.pack_forget()
+    app.loading_indicator.stop()
+    app.loading_indicator.pack_forget()
 
 def search_directory(directory, filenames, extensions, exact_match, case_sensitive, search_content):
     """

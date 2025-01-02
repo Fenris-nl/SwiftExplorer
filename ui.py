@@ -11,6 +11,7 @@ from preview import preview_file, update_preview_image
 import os
 import logging
 from typing import List  # Add this import
+from ttkbootstrap.widgets import Meter  # Add this import
 
 from utils import format_size
 
@@ -130,6 +131,13 @@ class FolderBrowser:
             rowheight=30
         )
 
+        # Parent item styles
+        self.style.configure('Parent.Treeview',
+            background='#404040',
+            foreground='white',
+            font=('Segoe UI', 10, 'bold')
+        )
+
     def create_menu_bar(self, root):
         """Create the menu bar with settings and help menus."""
         menu_bar = tk.Menu(root)
@@ -150,7 +158,7 @@ class FolderBrowser:
         """Open the settings dialog."""
         settings_dialog = tk.Toplevel(self.root)
         settings_dialog.title("Settings")
-        settings_dialog.geometry("400x300")
+        settings_dialog.geometry("400x400")
         settings_dialog.transient(self.root)
         settings_dialog.grab_set()
 
@@ -169,8 +177,15 @@ class FolderBrowser:
         default_dir_button = tk.Button(settings_dialog, text="Browse", command=lambda: self.browse_default_directory(default_dir_entry))
         default_dir_button.pack(pady=10)
 
+        # Search history size
+        history_size_label = tk.Label(settings_dialog, text="Search History Size:")
+        history_size_label.pack(pady=10)
+        history_size_var = tk.IntVar(value=self.max_history)
+        history_size_spinbox = tk.Spinbox(settings_dialog, from_=1, to=100, textvariable=history_size_var, width=5)
+        history_size_spinbox.pack(pady=10)
+
         # Save settings button
-        save_button = tk.Button(settings_dialog, text="Save", command=lambda: self.save_settings(theme_var.get(), default_dir_entry.get()))
+        save_button = tk.Button(settings_dialog, text="Save", command=lambda: self.save_settings(theme_var.get(), default_dir_entry.get(), history_size_var.get()))
         save_button.pack(pady=20)
 
     def browse_default_directory(self, entry):
@@ -180,13 +195,19 @@ class FolderBrowser:
             entry.delete(0, tk.END)
             entry.insert(0, directory)
 
-    def save_settings(self, theme, default_directory):
+    def save_settings(self, theme, default_directory, history_size):
         """Save the settings."""
         # Save the settings to a file or apply them directly
         # For simplicity, we'll just print them here
         print(f"Theme: {theme}")
         print(f"Default Directory: {default_directory}")
+        print(f"Search History Size: {history_size}")
         self.update_status("Settings saved")
+
+        # Apply settings
+        self.max_history = history_size
+        self.root.style.theme_use(theme)
+        self.update_status("Settings applied")
 
     def show_help(self):
         """Show the help dialog."""
@@ -528,6 +549,11 @@ class FolderBrowser:
             background='#404040',
             foreground='white'
         )
+        self.results_tree.tag_configure('parent',
+            background='#404040',
+            foreground='white',
+            font=('Segoe UI', 10, 'bold')
+        )
 
         # Add scrollbar
         self.results_scrollbar = ttk.Scrollbar(parent_frame, orient=tk.VERTICAL, command=self.results_tree.yview)
@@ -541,10 +567,14 @@ class FolderBrowser:
         self.results_tree.bind('<<TreeviewSelect>>', self.preview_file)
         self.results_tree.bind('<Double-1>', self.on_double_click)
         
-        # Configure the spinner
-        self.spinner = tb.Progressbar(parent_frame, mode='indeterminate')
-        self.spinner.pack(side=tk.TOP, pady=10)
-        self.spinner.pack_forget()
+        # Replace Meter spinner with a standard Progressbar
+        # self.spinner = Meter(parent_frame, metersize=100, amountused=0, metertype='semi', subtext='Loading...')
+        # self.spinner.pack(side=tk.TOP, pady=10)
+        # self.spinner.pack_forget()
+
+        self.loading_indicator = ttk.Progressbar(parent_frame, orient='horizontal', mode='indeterminate')
+        self.loading_indicator.pack(side=tk.TOP, pady=10)
+        self.loading_indicator.pack_forget()
 
         # Add modern styling to treeview
         self.results_tree.configure(style='Modern.Treeview')
@@ -572,12 +602,13 @@ class FolderBrowser:
         """Handle treeview hover effect"""
         item = self.results_tree.identify_row(event.y)
         if item:
-            self.results_tree.tag_add('hover', item)
+            self.results_tree.item(item, tags=('hover',))
 
     def on_tree_leave(self, event):
         """Handle treeview hover leave"""
-        for item in self.results_tree.tag_has('hover'):
-            self.results_tree.tag_remove('hover', item)
+        for index, item in enumerate(self.results_tree.get_children()):
+            tag = 'evenrow' if index % 2 == 0 else 'oddrow'
+            self.results_tree.item(item, tags=(tag,))
 
     def insert_file_result(self, parent, file_path, index):
         """Insert a file result into the treeview."""
@@ -613,29 +644,37 @@ class FolderBrowser:
         file_paths (defaultdict): A dictionary of filenames and their corresponding file paths.
         search_type (str): The type of search to perform (e.g., All, Newest, Oldest).
         """
+        logging.info(f"Displaying results for search type: {search_type}")
+        self.results_tree.delete(*self.results_tree.get_children())
+
         if search_type == "All":
+            # Show all results grouped by target
             for target, paths in file_paths.items():
-                parent = self.results_tree.insert('', 'end', text=target, values=("", "", "", ""))
+                parent = self.results_tree.insert('', 'end', text=target, values=("", "", "", ""), tags=('parent',))
+                self.results_tree.item(parent, open=True)  # Ensure parent is expanded
                 for index, file_path in enumerate(paths):
+                    logging.info(f"Inserting file: {file_path}")
                     self.insert_file_result(parent, file_path, index)
         else:
+            # Get unique files based on search type
             selected_files = select_files_by_type(file_paths, search_type)
-
-            total_files = len(selected_files)
-            if total_files == 0:
-                self.search_button.config(state="normal")
-                self.spinner.stop()
-                self.spinner.pack_forget()
+            if not selected_files:
+                self.update_status("No matching files found")
                 return
 
+            # Sort results if needed
             sort_by = self.sort_by_var.get()
-            if (sort_by == "Size"):
+            if sort_by == "Size":
                 selected_files.sort(key=lambda x: os.path.getsize(x))
-            elif (sort_by == "Date"):
+            elif sort_by == "Date":
                 selected_files.sort(key=os.path.getmtime)
 
+            # Display unique results
             for index, file_path in enumerate(selected_files):
                 self.insert_file_result('', file_path, index)
+
+            # Update status
+            self.update_status(f"Found {len(selected_files)} file(s)")
 
     def create_file_operations_frame(self, parent_frame):
         file_ops_frame = tb.Frame(parent_frame)
@@ -783,8 +822,8 @@ class FolderBrowser:
             
             self.search_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
-            self.spinner.pack()
-            self.spinner.start()
+            self.loading_indicator.pack()
+            self.loading_indicator.start()
             self.stop_event.clear()  # Clear the stop event before starting the search
             search_thread = threading.Thread(target=lambda: search_files(self))
             search_thread.start()
@@ -792,8 +831,7 @@ class FolderBrowser:
             self.update_status(f"Search error: {str(e)}")
             self.search_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
-            self.spinner.stop()
-            self.spinner.pack_forget()
+            self.loading_indicator.pack_forget()
 
     def stop_search(self):
         """Stop the search operation."""
@@ -801,8 +839,8 @@ class FolderBrowser:
         self.update_status("Stopping search...")
         self.search_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
-        self.spinner.stop()
-        self.spinner.pack_forget()
+        self.loading_indicator.stop()
+        self.loading_indicator.pack_forget()
 
     def preview_file(self, event):
         try:

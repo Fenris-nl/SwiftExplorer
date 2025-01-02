@@ -197,8 +197,11 @@ def update_preview_image(app):
             img = app.image.copy()
             width, height = img.size
             new_size = int(width * app.zoom_level), int(height * app.zoom_level)
-            # Use LANCZOS instead of deprecated ANTIALIAS
-            img = img.resize(new_size, Image.Resampling.LANCZOS)
+            try:
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            except AttributeError:
+                # Fallback for older Pillow versions
+                img = img.resize(new_size, Image.LANCZOS)
             app.canvas_img = ImageTk.PhotoImage(img)
             app.canvas.create_image(app.canvas.winfo_width()//2, app.canvas.winfo_height()//2, anchor="center", image=app.canvas_img)
             app.canvas.config(scrollregion=app.canvas.bbox("all"))

@@ -6,6 +6,12 @@ import json
 from pathlib import Path
 from typing import Dict, Any
 import logging
+import PIL
+from PIL import Image
+
+# Monkey-patch: allow calls to Image.CUBIC by mapping it to BICUBIC
+if not hasattr(Image, "CUBIC"):
+    Image.CUBIC = Image.BICUBIC
 
 CONFIG_FILE = Path("config.json")
 
