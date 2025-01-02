@@ -17,7 +17,7 @@ from utils import format_size
 class FolderBrowser:
     def __init__(self, root):
         self.root = root
-        self.root.title("Professional File Browser")
+        self.root.title("SwiftExplorer - File Browser")
         self.root.geometry("1200x800")  # Set a larger default window size
 
         self.selected_files = []
@@ -190,11 +190,37 @@ class FolderBrowser:
 
     def show_help(self):
         """Show the help dialog."""
-        messagebox.showinfo("Help", "This is the help dialog. Provide useful information here.")
+        help_text = (
+            "SwiftExplorer Help\n\n"
+            "1. Basic Search:\n"
+            "   - Enter directory path or browse\n"
+            "   - Input search terms (one per line)\n"
+            "   - Click 'Search' or press F5\n\n"
+            "2. Advanced Search:\n"
+            "   - Toggle 'Exact Match' for precise results\n"
+            "   - Enable 'Case Sensitive' for specific matches\n"
+            "   - Select file extensions to filter results\n\n"
+            "3. Search Results:\n"
+            "   - Double-click to open files\n"
+            "   - Select multiple files for batch operations\n"
+            "   - Sort by name, size, or date\n"
+            "   - Preview selected files\n\n"
+            "For more information, visit the GitHub repository:\n"
+            "https://github.com/Fenris-nl/SwiftExplorer"
+        )
+        messagebox.showinfo("Help", help_text)
 
     def show_about(self):
         """Show the about dialog."""
-        messagebox.showinfo("About", "Professional File Browser\nVersion 1.0\nDeveloped by Your Name")
+        about_text = (
+            "SwiftExplorer\n"
+            "Version 1.0\n\n"
+            "Developed by Kaan Erdem\n"
+            "GitHub: https://github.com/Fenris-nl\n\n"
+            "A professional-grade file management application built with Python, "
+            "featuring advanced search capabilities, file preview support, and a modern dark/light theme interface."
+        )
+        messagebox.showinfo("About", about_text)
 
     def create_main_layout(self, root):
         """

@@ -7,8 +7,6 @@ A professional-grade file management application built with Python, featuring ad
 ### 🔍 Search Capabilities
 - **Smart Search**: Find files by name, content, or pattern matching
 - **Advanced Filters**: 
-  - 📏 File size constraints
-  - 📅 Date range filtering
   - 📁 Extension-specific searching
   - 🔤 Case sensitivity options
 - **📜 Search History**: Quick access to previous searches
@@ -27,8 +25,6 @@ A professional-grade file management application built with Python, featuring ad
 
 ### 🎯 Advanced Search
 - **🔍 Smart Filtering**:
-  - 📅 Date range with calendar picker
-  - 📏 Size range with unit conversion
   - 🏷️ File type categories
   - 🔠 Regex pattern matching
 - **📊 Results View**:
@@ -65,7 +61,7 @@ A professional-grade file management application built with Python, featuring ad
 ### Setup
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/SwiftExplorer.git
+git clone https://github.com/Fenris-nl/SwiftExplorer.git
 cd SwiftExplorer
 
 # Create and activate virtual environment (recommended)
@@ -98,8 +94,6 @@ python main.py
    - Toggle "Exact Match" for precise results
    - Enable "Case Sensitive" for specific matches
    - Select file extensions to filter results
-   - Set size constraints
-   - Specify date ranges
 
 3. **Search Results**:
    - Double-click to open files
@@ -151,7 +145,7 @@ SUPPORTED_PDF_FILES = {'.pdf'}
 
 For bug reports and feature requests, please use the GitHub issues system. For direct support:
 - 📧 Email: [kaanerdem3@gmail.com](mailto:kaanerdem3@gmail.com)
-- 🐛 GitHub Issues: [Project Issues](https://github.com/yourusername/SwiftExplorer/issues)
+- 🐛 GitHub Issues: [Project Issues](https://github.com/Fenris-nl/SwiftExplorer/issues)
 
 ## 📄 License
 
