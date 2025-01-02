@@ -8,13 +8,24 @@ from collections import defaultdict
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import Dict, List, Optional, Set
+from pathlib import Path
 
 logging.basicConfig(level=logging.ERROR, filename='app_errors.log')
 
-def search_files(app):
-    """Search for files in the specified directory based on user input."""
+def search_files(app) -> None:
+    """
+    Search for files in the specified directory based on user input.
+    
+    Args:
+        app: The application instance containing search parameters and UI elements.
+    """
     try:
-        directory = app.directory_entry.get()
+        directory = Path(app.directory_entry.get())
+        if not directory.exists():
+            show_error(app, "Directory does not exist")
+            return
+
         exact_match = app.exact_match_var.get()
         case_sensitive = app.case_sensitive_checkbox.instate(['selected'])
         search_content = app.search_content_checkbox.instate(['selected'])
@@ -36,36 +47,32 @@ def search_files(app):
         app.results_tree.delete(*app.results_tree.get_children())
         app.selected_files = []
 
-        print(f"Searching in directory: {directory}")  # Debug print
-        print(f"Searching for files: {filenames}")  # Debug print
+        logging.info(f"Searching in directory: {directory}")
+        logging.info(f"Searching for files: {filenames}")
 
-        # Perform the search
-        found_files = defaultdict(list)
-        for root, _, files in os.walk(directory):
-            if app.stop_event.is_set():
-                print("Search stopped")  # Debug print
-                break
-            for file in files:
+        # Optimize search with set for O(1) lookups
+        extension_set: Set[str] = set(extensions)
+        
+        # Use generator to reduce memory usage
+        def file_generator():
+            for root, _, files in os.walk(directory):
                 if app.stop_event.is_set():
-                    print("Search stopped")  # Debug print
-                    break
-                file_name, file_extension = os.path.splitext(file)
-                if not extensions or file_extension.lower() in extensions:
-                    file_path = os.path.join(root, file)
-                    for target in filenames:
-                        if app.stop_event.is_set():
-                            print("Search stopped")  # Debug print
-                            break
-                        if exact_match:
-                            if is_exact_match(file, target, extensions, case_sensitive):
-                                found_files[target].append(file_path)
-                                print(f"Found exact match: {file_path}")  # Debug print
-                        else:
-                            if (target.lower() in file_name.lower()) or search_content and search_file_content(file_path, target):
-                                found_files[target].append(file_path)
-                                print(f"Found match: {file_path}")  # Debug print
+                    return
+                for file in files:
+                    if app.stop_event.is_set():
+                        return
+                    yield root, file
 
-        print(f"Total files found: {sum(len(files) for files in found_files.values())}")  # Debug print
+        found_files = defaultdict(list)
+        for root, file in file_generator():
+            file_path = Path(root) / file
+            if not extensions or file_path.suffix.lower() in extension_set:
+                for target in filenames:
+                    if is_match(file, target, extension_set, exact_match, case_sensitive):
+                        found_files[target].append(str(file_path))
+                        logging.info(f"Found match: {file_path}")
+
+        logging.info(f"Total files found: {sum(len(files) for files in found_files.values())}")
 
         # Display results
         app.results_tree.delete(*app.results_tree.get_children())  # Clear existing results
@@ -74,10 +81,10 @@ def search_files(app):
             for index, (target, paths) in enumerate(found_files.items()):
                 for file_path in paths:
                     if app.stop_event.is_set():
-                        print("Search stopped")  # Debug print
+                        logging.info("Search stopped")
                         break
                     app.insert_file_result('', file_path, index)  # Insert directly without parent
-                    print(f"Inserting file: {file_path}")  # Debug print
+                    logging.info(f"Inserting file: {file_path}")
         
             # Update status with total files found
             total_files = sum(len(paths) for paths in found_files.values())
@@ -86,8 +93,7 @@ def search_files(app):
             app.update_status("No files found")
 
     except Exception as e:
-        print(f"Search error: {str(e)}")  # Debug print
-        logging.error(f"Search error: {str(e)}")
+        logging.exception("Search error")
         show_error(app, f"Search error: {str(e)}")
     finally:
         app.search_button.config(state="normal")
@@ -255,11 +261,10 @@ def insert_file_result(app, parent, file_path, index):
             tags=(tag,)
         )
         
-        print(f"Inserted item: {values}")  # Debug print
+        logging.info(f"Inserted item: {values}")
         return item_id
         
     except Exception as e:
-        print(f"Error inserting file result: {str(e)}")  # Debug print
         logging.error(f"Error inserting file result: {str(e)}")
         return None
 
@@ -300,7 +305,7 @@ def search_file_content(file_path, search_text):
             content = file.read()
             return search_text in content
     except Exception as e:
-        print(f"Error searching content in file {file_path}: {e}")
+        logging.error(f"Error searching content in file {file_path}: {e}")
         return False
 
 def perform_file_operation(results_tree, operation):
@@ -390,7 +395,7 @@ def copy_file(file_path, destination):
 
         shutil.copy(file_path, destination_path)
     except Exception as e:
-        print(f"Error copying file {file_path} to {destination}: {e}")
+        logging.error(f"Error copying file {file_path} to {destination}: {e}")
 
 def move_file(file_path, destination):
     """
@@ -409,29 +414,30 @@ def move_file(file_path, destination):
 
         shutil.move(file_path, destination_path)
     except Exception as e:
-        print(f"Error moving file {file_path} to {destination}: {e}")
+        logging.error(f"Error moving file {file_path} to {destination}: {e}")
 
-def handle_existing_file(destination_path):
+def handle_existing_file(destination_path: str) -> str:
     """
-    Handle a file that already exists in the destination directory by renaming it.
-
-    Parameters:
-    destination_path (str): The original destination path.
-
+    Handle file name conflicts by creating a unique filename.
+    
+    Args:
+        destination_path: Original destination path
+        
     Returns:
-    str: The new destination path with a unique name.
+        str: New unique destination path
     """
-    creation_time = os.path.getctime(destination_path)
-    creation_date = datetime.fromtimestamp(creation_time).strftime('%Y%m%d_%H%M%S')
-    base_name, extension = os.path.splitext(os.path.basename(destination_path))
-    destination_path = os.path.join(os.path.dirname(destination_path), f"{base_name}_{creation_date}{extension}")
-
+    path = Path(destination_path)
+    creation_time = datetime.fromtimestamp(path.stat().st_ctime)
+    timestamp = creation_time.strftime('%Y%m%d_%H%M%S')
+    
+    new_path = path.parent / f"{path.stem}_{timestamp}{path.suffix}"
     counter = 1
-    while os.path.exists(destination_path):
-        destination_path = os.path.join(os.path.dirname(destination_path), f"{base_name}_{creation_date}_{counter}{extension}")
+    
+    while new_path.exists():
+        new_path = path.parent / f"{path.stem}_{timestamp}_{counter}{path.suffix}"
         counter += 1
-
-    return destination_path
+        
+    return str(new_path)
 
 def delete_file(file_path):
     """
@@ -443,4 +449,33 @@ def delete_file(file_path):
     try:
         os.remove(file_path)
     except Exception as e:
-        print(f"Error deleting file {file_path}: {e}")
+        logging.error(f"Error deleting file {file_path}: {e}")
+
+def is_match(file: str, target: str, extensions: Set[str], exact_match: bool, case_sensitive: bool) -> bool:
+    """
+    Check if a file matches the target criteria.
+    
+    Args:
+        file: The filename to check
+        target: The target filename to match
+        extensions: Set of valid file extensions
+        exact_match: Whether to perform exact matching
+        case_sensitive: Whether to perform case-sensitive matching
+    
+    Returns:
+        bool: True if the file matches the criteria
+    """
+    if not case_sensitive:
+        file = file.lower()
+        target = target.lower()
+
+    file_name, file_ext = os.path.splitext(file)
+    
+    if exact_match:
+        # Check exact match with or without extension
+        return (file == target or 
+                file == f"{target}{file_ext}" or 
+                any(file == f"{target}{ext}" for ext in extensions))
+    else:
+        # Check partial match in filename
+        return target in file_name

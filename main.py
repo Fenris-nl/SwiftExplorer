@@ -1,28 +1,67 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import ttkbootstrap as tb
 from ui import FolderBrowser
+import json
+from pathlib import Path
+from typing import Dict, Any
+import logging
 
-def main():
-    """
-    Main function to initialize and run the application.
-    """
-    root = tb.Window(themename="cyborg")
-    app = FolderBrowser(root)
+CONFIG_FILE = Path("config.json")
 
-    # Add dark mode toggle
-    dark_mode_var = tk.BooleanVar(value=True)
-    dark_mode_toggle = tb.Checkbutton(root, text="Dark Mode", variable=dark_mode_var, bootstyle="switch", command=lambda: toggle_dark_mode(root, dark_mode_var))
-    dark_mode_toggle.pack(side=tk.BOTTOM, pady=10)
+def load_config() -> Dict[str, Any]:
+    """Load application configuration."""
+    try:
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE) as f:
+                return json.load(f)
+    except Exception as e:
+        logging.error(f"Error loading config: {e}")
+    return {"theme": "cyborg", "default_directory": str(Path.home())}
 
-    root.mainloop()
+def save_config(config: Dict[str, Any]) -> None:
+    """Save application configuration."""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        logging.error(f"Error saving config: {e}")
 
-def toggle_dark_mode(root, var):
-    """Toggle dark mode."""
+def main() -> None:
+    """Initialize and run the application."""
+    try:
+        config = load_config()
+        root = tb.Window(themename=config["theme"])
+        app = FolderBrowser(root)
+        
+        if config["default_directory"]:
+            app.directory_entry.insert(0, config["default_directory"])
+
+        # Add dark mode toggle
+        dark_mode_var = tk.BooleanVar(value=config["theme"] == "cyborg")
+        dark_mode_toggle = tb.Checkbutton(
+            root, 
+            text="Dark Mode", 
+            variable=dark_mode_var, 
+            bootstyle="switch",
+            command=lambda: toggle_dark_mode(root, dark_mode_var, config)
+        )
+        dark_mode_toggle.pack(side=tk.BOTTOM, pady=10)
+
+        root.mainloop()
+    except Exception as e:
+        logging.exception("Application error")
+        messagebox.showerror("Error", f"Application error: {str(e)}")
+
+def toggle_dark_mode(root: tb.Window, var: tk.BooleanVar, config: Dict[str, Any]) -> None:
+    """Toggle dark mode and save preference."""
+    theme = "cyborg" if var.get() else "flatly"
+    root.style.theme_use(theme)
+    config["theme"] = theme
+    save_config(config)
+    
     style = ttk.Style()
     if var.get():
-        root.style.theme_use("cyborg")
-        # Update Treeview colors for dark mode
         style.configure("Treeview",
             background="#2b2b2b",
             foreground="white",
@@ -31,8 +70,6 @@ def toggle_dark_mode(root, var):
             selectforeground="white"
         )
     else:
-        root.style.theme_use("flatly")
-        # Update Treeview colors for light mode
         style.configure("Treeview",
             background="white",
             foreground="black",

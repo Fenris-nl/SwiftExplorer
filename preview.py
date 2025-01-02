@@ -3,39 +3,49 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import logging
 import fitz  # PyMuPDF
+from typing import Optional, Set
+from pathlib import Path
 
 logging.basicConfig(level=logging.ERROR, filename='app_errors.log')
 
-# Define supported file types
-SUPPORTED_TEXT_FILES = {'.txt', '.py', '.log', '.md', '.json', '.xml', '.csv', '.ini', '.yml', '.yaml', '.html', '.css', '.js'}
-SUPPORTED_IMAGE_FILES = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'}
-SUPPORTED_PDF_FILES = {'.pdf'}
+# Define supported file types as frozen sets for immutability
+SUPPORTED_TEXT_FILES: Set[str] = frozenset({'.txt', '.py', '.log', '.md', '.json', '.xml', '.csv', '.ini', '.yml', '.yaml', '.html', '.css', '.js'})
+SUPPORTED_IMAGE_FILES: Set[str] = frozenset({'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'})
+SUPPORTED_PDF_FILES: Set[str] = frozenset({'.pdf'})
 
-def preview_file(app, file_path, page_number=0):
-    if not hasattr(app, 'canvas') or not app.canvas:
-        logging.error("Canvas not initialized")
-        return
-
-    if not os.path.exists(file_path):
-        display_error(app, f"File not found: {file_path}")
-        return
-
-    file_extension = os.path.splitext(file_path)[1].lower()
+def preview_file(app, file_path: str, page_number: int = 0) -> None:
+    """
+    Preview a file based on its type.
+    
+    Args:
+        app: Application instance
+        file_path: Path to the file to preview
+        page_number: Page number for PDF files
+        
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        ValueError: If file type is not supported
+    """
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+        
+    extension = path.suffix.lower()
     
     try:
-        if file_extension in SUPPORTED_TEXT_FILES:
+        if extension in SUPPORTED_TEXT_FILES:
             preview_text_file(app, file_path)
-        elif file_extension in SUPPORTED_IMAGE_FILES:
+        elif extension in SUPPORTED_IMAGE_FILES:
             preview_image_file(app, file_path)
-        elif file_extension in SUPPORTED_PDF_FILES:
+        elif extension in SUPPORTED_PDF_FILES:
             preview_pdf_file(app, file_path, page_number)
         else:
             try:
                 preview_text_file(app, file_path)
-            except:
-                raise ValueError(f"Unsupported file type: {file_extension}")
+            except Exception:
+                raise ValueError(f"Unsupported file type: {extension}")
     except Exception as e:
-        logging.error(f"Error previewing file {file_path}: {e}")
+        logging.exception(f"Error previewing file {file_path}")
         display_error(app, str(e))
 
 def preview_text_file(app, file_path):
