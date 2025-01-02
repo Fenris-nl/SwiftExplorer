@@ -10,6 +10,7 @@ from file_operations import search_files, perform_file_operation, select_files_b
 from preview import preview_file, update_preview_image
 import os
 import logging
+from typing import List  # Add this import
 
 from utils import format_size
 
@@ -31,6 +32,32 @@ class FolderBrowser:
         self.search_png_var = BooleanVar(value=False)
         self.search_gif_var = BooleanVar(value=False)
         self.search_pdf_var = BooleanVar(value=False)
+
+        # Add more BooleanVar for file extensions
+        self.extension_vars = {
+            # Images
+            'jpg': BooleanVar(value=False),
+            'png': BooleanVar(value=False),
+            'gif': BooleanVar(value=False),
+            'webp': BooleanVar(value=False),
+            'svg': BooleanVar(value=False),
+            # Documents
+            'pdf': BooleanVar(value=False),
+            'doc': BooleanVar(value=False),
+            'docx': BooleanVar(value=False),
+            'xls': BooleanVar(value=False),
+            'xlsx': BooleanVar(value=False),
+            # Code files
+            'py': BooleanVar(value=False),
+            'java': BooleanVar(value=False),
+            'cpp': BooleanVar(value=False),
+            'js': BooleanVar(value=False),
+            # Other
+            'txt': BooleanVar(value=False),
+            'md': BooleanVar(value=False),
+            'json': BooleanVar(value=False),
+            'xml': BooleanVar(value=False),
+        }
 
         # Initialize preview components first
         self.canvas = None
@@ -228,63 +255,96 @@ class FolderBrowser:
         options_frame = tb.Frame(parent_frame)
         options_frame.pack(fill=tk.X, pady=(10, 5))
 
-        self.exact_match_checkbox = tb.Checkbutton(options_frame, text="Exact Match", variable=self.exact_match_var, bootstyle=INFO)
-        self.exact_match_checkbox.pack(side=tk.LEFT, padx=(0, 10))
+        # Create checkboxes frame with scrollbar
+        extensions_frame = tb.LabelFrame(options_frame, text="File Extensions", padding=5)
+        extensions_frame.pack(fill=tk.X, pady=5)
 
-        self.case_sensitive_checkbox = tb.Checkbutton(options_frame, text="Case Sensitive", bootstyle=INFO)
-        self.case_sensitive_checkbox.pack(side=tk.LEFT, padx=(0, 10))
+        # Create canvas and scrollbar for extensions
+        canvas = tk.Canvas(extensions_frame, height=100)
+        scrollbar = ttk.Scrollbar(extensions_frame, orient="horizontal", command=canvas.xview)
+        scrollable_frame = ttk.Frame(canvas)
 
-        self.search_content_checkbox = tb.Checkbutton(options_frame, text="Search Content", bootstyle=INFO)
+        canvas.configure(xscrollcommand=scrollbar.set)
+
+        # Group extensions by type
+        extension_groups = {
+            "Images": [('jpg', 'JPG'), ('png', 'PNG'), ('gif', 'GIF'), ('webp', 'WebP'), ('svg', 'SVG')],
+            "Documents": [('pdf', 'PDF'), ('doc', 'DOC'), ('docx', 'DOCX'), ('xls', 'XLS'), ('xlsx', 'XLSX')],
+            "Code": [('py', 'Python'), ('java', 'Java'), ('cpp', 'C++'), ('js', 'JavaScript')],
+            "Other": [('txt', 'TXT'), ('md', 'MD'), ('json', 'JSON'), ('xml', 'XML')]
+        }
+
+        # Create extension checkboxes in groups
+        current_x = 0
+        for group_name, extensions in extension_groups.items():
+            group_frame = ttk.LabelFrame(scrollable_frame, text=group_name, padding=5)
+            group_frame.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+            
+            for ext, label in extensions:
+                cb = tb.Checkbutton(
+                    group_frame,
+                    text=label,
+                    variable=self.extension_vars[ext],
+                    bootstyle="round-toggle"
+                )
+                cb.pack(anchor=tk.W, padx=5)
+                current_x += cb.winfo_reqwidth()
+
+        # Configure canvas
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        canvas.pack(side=tk.TOP, fill=tk.X, expand=True)
+        scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Rest of options
+        options_inner_frame = tb.Frame(options_frame)
+        options_inner_frame.pack(fill=tk.X, pady=5)
+
+        self.exact_match_checkbox = tb.Checkbutton(options_inner_frame, text="Exact Match", 
+                                                 variable=self.exact_match_var, bootstyle="info-round-toggle")
+        self.exact_match_checkbox.pack(side=tk.LEFT, padx=5)
+
+        self.case_sensitive_checkbox = tb.Checkbutton(options_inner_frame, text="Case Sensitive", 
+                                                    bootstyle="info-round-toggle")
+        self.case_sensitive_checkbox.pack(side=tk.LEFT, padx=5)
+
+        self.search_content_checkbox = tb.Checkbutton(options_inner_frame, text="Search Content", bootstyle=INFO)
         self.search_content_checkbox.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.extension_label = tb.Label(options_frame, text="File Extensions:", font=("Helvetica", 12))
-        self.extension_label.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.search_jpg_checkbox = tb.Checkbutton(options_frame, text=".jpg", variable=self.search_jpg_var, bootstyle=INFO)
-        self.search_jpg_checkbox.pack(side=tk.LEFT, padx=(0, 5))
-
-        self.search_png_checkbox = tb.Checkbutton(options_frame, text=".png", variable=self.search_png_var, bootstyle=INFO)
-        self.search_png_checkbox.pack(side=tk.LEFT, padx=(0, 5))
-
-        self.search_gif_checkbox = tb.Checkbutton(options_frame, text=".gif", variable=self.search_gif_var, bootstyle=INFO)
-        self.search_gif_checkbox.pack(side=tk.LEFT, padx=(0, 5))
-
-        self.search_pdf_checkbox = tb.Checkbutton(options_frame, text=".pdf", variable=self.search_pdf_var, bootstyle=INFO)
-        self.search_pdf_checkbox.pack(side=tk.LEFT, padx=(0, 5))
-
-        self.sort_by_label = tb.Label(options_frame, text="Sort By:", font=("Helvetica", 12))
+        self.sort_by_label = tb.Label(options_inner_frame, text="Sort By:", font=("Helvetica", 12))
         self.sort_by_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.sort_by_var = tk.StringVar()
         self.sort_by_var.set("None")
-        self.sort_by_combobox = ttk.Combobox(options_frame, textvariable=self.sort_by_var, values=["None", "Size", "Date"], state="readonly")
+        self.sort_by_combobox = ttk.Combobox(options_inner_frame, textvariable=self.sort_by_var, values=["None", "Size", "Date"], state="readonly")
         self.sort_by_combobox.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.search_type_label = tb.Label(options_frame, text="Search Type:", font=("Helvetica", 12))
+        self.search_type_label = tb.Label(options_inner_frame, text="Search Type:", font=("Helvetica", 12))
         self.search_type_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.search_type_var = tk.StringVar()
         self.search_type_var.set("All")
-        self.search_type_combobox = ttk.Combobox(options_frame, textvariable=self.search_type_var, values=["All", "Newest", "Oldest", "Largest", "Smallest"], state="readonly")
+        self.search_type_combobox = ttk.Combobox(options_inner_frame, textvariable=self.search_type_var, values=["All", "Newest", "Oldest", "Largest", "Smallest"], state="readonly")
         self.search_type_combobox.pack(side=tk.LEFT, padx=(0, 10))
 
         # Add advanced search options
-        self.min_size_label = tb.Label(options_frame, text="Min Size (KB):", font=("Helvetica", 12))
+        self.min_size_label = tb.Label(options_inner_frame, text="Min Size (KB):", font=("Helvetica", 12))
         self.min_size_label.pack(side=tk.LEFT, padx=(0, 10))
         self.min_size_var = tk.IntVar()
-        self.min_size_entry = tb.Entry(options_frame, textvariable=self.min_size_var, width=10)
+        self.min_size_entry = tb.Entry(options_inner_frame, textvariable=self.min_size_var, width=10)
         self.min_size_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.max_size_label = tb.Label(options_frame, text="Max Size (KB):", font=("Helvetica", 12))
+        self.max_size_label = tb.Label(options_inner_frame, text="Max Size (KB):", font=("Helvetica", 12))
         self.max_size_label.pack(side=tk.LEFT, padx=(0, 10))
         self.max_size_var = tk.IntVar()
-        self.max_size_entry = tb.Entry(options_frame, textvariable=self.max_size_var, width=10)
+        self.max_size_entry = tb.Entry(options_inner_frame, textvariable=self.max_size_var, width=10)
         self.max_size_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.date_range_label = tb.Label(options_frame, text="Date Range:", font=("Helvetica", 12))
+        self.date_range_label = tb.Label(options_inner_frame, text="Date Range:", font=("Helvetica", 12))
         self.date_range_label.pack(side=tk.LEFT, padx=(0, 10))
         self.date_range_var = tk.StringVar()
-        self.date_range_entry = tb.Entry(options_frame, textvariable=self.date_range_var, width=20)
+        self.date_range_entry = tb.Entry(options_inner_frame, textvariable=self.date_range_var, width=20)
         self.date_range_entry.pack(side=tk.LEFT, padx=(0, 10))
 
     def create_search_button(self, parent_frame):
@@ -765,3 +825,12 @@ class FolderBrowser:
         except Exception as e:
             messagebox.showerror("Error", f"Could not open file: {repr(e)}")
             logging.error(f"Error opening file: {repr(e)}")
+
+    def get_selected_extensions(self) -> List[str]:
+        """
+        Get list of selected file extensions.
+        
+        Returns:
+            List[str]: List of selected file extensions with dots (e.g., ['.jpg', '.png'])
+        """
+        return [f'.{ext}' for ext, var in self.extension_vars.items() if var.get()]

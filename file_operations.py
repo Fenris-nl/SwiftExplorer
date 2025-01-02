@@ -111,16 +111,7 @@ def get_extensions(app):
     Returns:
     list: A list of file extensions to search for.
     """
-    extensions = []
-    if app.search_jpg_var.get():
-        extensions.append('.jpg')
-    if app.search_png_var.get():
-        extensions.append('.png')
-    if app.search_gif_var.get():
-        extensions.append('.gif')
-    if app.search_pdf_var.get():
-        extensions.append('.pdf')
-    return extensions
+    return app.get_selected_extensions()
 
 def show_error(app, message):
     """
