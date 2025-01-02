@@ -15,15 +15,27 @@ A professional-grade file management application built with Python, featuring ad
 - **⚡ Real-time Results**: Dynamic updates during search operations
 
 ### 👁️ File Preview
-- **📦 Multi-format Support**:
-  - 📝 Text files: `.txt`, `.py`, `.log`, `.md`, `.json`, `.xml`, `.csv`, `.ini`, `.yml`, `.yaml`, `.html`, `.css`, `.js`
-  - 🖼️ Images: `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.tiff`, `.webp`
-  - 📄 Documents: `.pdf`
-- **🎯 Preview Features**:
-  - 🔍 Zoom controls for images and PDFs
-  - 📑 PDF page navigation
-  - 📖 Text file content viewing
-  - 🎨 Syntax highlighting (for supported formats)
+- **📦 Enhanced Multi-format Support**:
+  - 📝 Text files with syntax highlighting: Python, Java, C++, SQL, and more
+  - 🖼️ Extended image formats: PNG, JPG, HEIC, RAW, PSD, SVG
+  - 📄 Documents: PDF, Office formats (doc, xls, ppt)
+- **🎨 Image Enhancement Features**:
+  - 🔆 Brightness and contrast controls
+  - 🎨 Filters: Grayscale, Sepia, Blur, Sharpen
+  - 🔄 Rotation and flip options
+  - 🔍 Advanced zoom with mouse wheel support
+
+### 🎯 Advanced Search
+- **🔍 Smart Filtering**:
+  - 📅 Date range with calendar picker
+  - 📏 Size range with unit conversion
+  - 🏷️ File type categories
+  - 🔠 Regex pattern matching
+- **📊 Results View**:
+  - 📋 Customizable columns
+  - 🔄 Sort by any attribute
+  - 🎨 Color coding by file type
+  - 📥 Export results to CSV/Excel
 
 ### 🛠️ File Operations
 - **⚡ Batch Processing**: Perform operations on multiple files

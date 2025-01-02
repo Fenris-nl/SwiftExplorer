@@ -1,17 +1,34 @@
 import os
 from tkinter import messagebox
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageEnhance, ImageFilter
 import logging
 import fitz  # PyMuPDF
 from typing import Optional, Set
 from pathlib import Path
+import pygments
+from pygments.lexers import get_lexer_for_filename
+from pygments.formatters import BBCodeFormatter
 
 logging.basicConfig(level=logging.ERROR, filename='app_errors.log')
 
 # Define supported file types as frozen sets for immutability
-SUPPORTED_TEXT_FILES: Set[str] = frozenset({'.txt', '.py', '.log', '.md', '.json', '.xml', '.csv', '.ini', '.yml', '.yaml', '.html', '.css', '.js'})
-SUPPORTED_IMAGE_FILES: Set[str] = frozenset({'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'})
+SUPPORTED_TEXT_FILES: Set[str] = frozenset({
+    '.txt', '.py', '.log', '.md', '.json', '.xml', '.csv', '.ini', '.yml', 
+    '.yaml', '.html', '.css', '.js', '.cpp', '.h', '.java', '.sql', '.sh',
+    '.bat', '.ps1', '.r', '.scala', '.go', '.rs', '.php'
+})
+
+SUPPORTED_IMAGE_FILES: Set[str] = frozenset({
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp',
+    '.ico', '.svg', '.psd', '.raw', '.heic'
+})
+
 SUPPORTED_PDF_FILES: Set[str] = frozenset({'.pdf'})
+
+SUPPORTED_DOCUMENT_FILES: Set[str] = frozenset({
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.odt', '.ods', '.odp'
+})
 
 def preview_file(app, file_path: str, page_number: int = 0) -> None:
     """
@@ -49,20 +66,28 @@ def preview_file(app, file_path: str, page_number: int = 0) -> None:
         display_error(app, str(e))
 
 def preview_text_file(app, file_path):
-    """
-    Preview a text file in the application's text widget.
+    """Enhanced text file preview with syntax highlighting."""
+    try:
+        app.preview_text.config(state="normal")
+        app.preview_text.delete("1.0", "end")
+        app.preview_text.pack(fill="both", expand=True)
 
-    Parameters:
-    app (object): The application instance containing the text widget.
-    file_path (str): The path of the text file to preview.
-    """
-    app.preview_text.config(state="normal")
-    app.preview_text.delete("1.0", "end")
-    app.preview_text.pack(fill="both", expand=True)  # Show the text widget
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
-    app.preview_text.insert("end", content)
-    app.preview_text.config(state="disabled")
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+        # Add syntax highlighting for supported file types
+        try:
+            lexer = get_lexer_for_filename(file_path)
+            formatter = BBCodeFormatter()
+            highlighted = pygments.highlight(content, lexer, formatter)
+            app.preview_text.insert("end", highlighted)
+        except:
+            app.preview_text.insert("end", content)
+
+        app.preview_text.config(state="disabled")
+    except Exception as e:
+        logging.error(f"Error previewing text file: {e}")
+        display_error(app, str(e))
 
 def preview_image_file(app, file_path):
     """
@@ -111,19 +136,24 @@ def display_error(app, error):
     logging.error(f"Error displaying file: {error}")
 
 def fit_image_to_canvas(app):
-    """
-    Fit the image to the canvas while maintaining aspect ratio.
-
-    Parameters:
-    app (object): The application instance containing the canvas and image.
-    """
+    """Enhanced image fitting with rotation and filters."""
     try:
         if not hasattr(app, 'image'):
             return
             
         img = app.image.copy()
+        
+        # Apply image enhancements if set
+        if hasattr(app, 'image_brightness') and app.image_brightness != 1.0:
+            enhancer = ImageEnhance.Brightness(img)
+            img = enhancer.enhance(app.image_brightness)
+            
+        if hasattr(app, 'image_contrast') and app.image_contrast != 1.0:
+            enhancer = ImageEnhance.Contrast(img)
+            img = enhancer.enhance(app.image_contrast)
+            
         if hasattr(app, 'rotation'):
-            img = img.rotate(app.rotation)
+            img = img.rotate(app.rotation, expand=True)
             
         canvas_width = app.canvas.winfo_width()
         canvas_height = app.canvas.winfo_height()
@@ -238,3 +268,32 @@ def update_pdf_navigation_buttons(app):
         app.next_page_button.config(state="disabled")
         app.zoom_in_button.config(state="disabled")
         app.zoom_out_button.config(state="disabled")
+
+# Add new image enhancement functions
+def apply_image_filter(app, filter_type):
+    """Apply various image filters."""
+    if hasattr(app, 'image'):
+        try:
+            img = app.image.copy()
+            if filter_type == "grayscale":
+                img = img.convert('L')
+            elif filter_type == "sepia":
+                # Apply sepia filter
+                width, height = img.size
+                pixels = img.load()
+                for x in range(width):
+                    for y in range(height):
+                        r, g, b = img.getpixel((x, y))
+                        tr = int(0.393 * r + 0.769 * g + 0.189 * b)
+                        tg = int(0.349 * r + 0.686 * g + 0.168 * b)
+                        tb = int(0.272 * r + 0.534 * g + 0.131 * b)
+                        img.putpixel((x, y), (min(tr, 255), min(tg, 255), min(tb, 255)))
+            elif filter_type == "blur":
+                img = img.filter(ImageFilter.BLUR)
+            elif filter_type == "sharpen":
+                img = img.filter(ImageFilter.SHARPEN)
+            
+            app.image = img
+            update_preview_image(app)
+        except Exception as e:
+            logging.error(f"Error applying image filter: {e}")
